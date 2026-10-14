@@ -3,10 +3,10 @@
 A minimalist Android tool for tracking screen time on shortform video applications (TikTok, Instagram Reels, YouTube Shorts).
 
 ```
- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
  │  simple tracking for shortform scrolling habits          │
- └───────────────────────────────────────────────────────────┘
-```
+ └──────────────────────────────────────────────────────────┘
+```no
 
 ## Purpose
 
@@ -24,9 +24,9 @@ Modern social media platforms are designed to maximize engagement. doomscroller 
 ```
 ┌─────────────────────────────────────────────────┐
 │  rust ├── kotlin/compose                        │
-│  ├── overlay service                           │
-│  ├── scroll detection                          │
-│  └── local preferences                         │
+│  ├── overlay service                            │
+│  ├── scroll detection                           │
+│  └── local preferences                          │
 └─────────────────────────────────────────────────┘
 ```
 
