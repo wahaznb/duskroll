@@ -1,59 +1,59 @@
-# doomscroller
+___________
+< DUSKROLL >
+-----------
 
-A minimalist Android tool for tracking screen time on shortform video applications (TikTok, Instagram Reels, YouTube Shorts).
+A minimalist Android tool for tracking screen time on shortform video applications.
 
-```
- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
- │  simple tracking for shortform scrolling habits          │
- └──────────────────────────────────────────────────────────┘
-```no
+ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+ │  simple tracking for shortform scrolling habits              │
+ └─────────────────────────────────────────────────────────────┘
 
-## Purpose
+Purpose
 
-Modern social media platforms are designed to maximize engagement. doomscroller provides awareness without gamification by tracking time spent scrolling through shortform content.
+Modern social media platforms are designed to maximize engagement.
+Duskroll provides awareness without gamification by tracking time
+spent scrolling through shortform content.
 
-## Functionality
+Functionality
 
 - Tracks time intervals across multiple sessions
 - Provides simple overlays to visualize progress
 - Minimal UI to avoid distraction
 - No telemetry or cloud services
 
-## Technical Details
+Technical Details
 
-```
-┌─────────────────────────────────────────────────┐
-│  rust ├── kotlin/compose                        │
-│  ├── overlay service                            │
-│  ├── scroll detection                           │
-│  └── local preferences                          │
-└─────────────────────────────────────────────────┘
-```
+ +-----------------------------+
+ |  rust + kotlin/compose      |
+ |  + overlay service          |
+ |  + scroll detection         |
+ |  + local preferences        |
+ +-----------------------------+
 
 Files:
 
-- `app/` - Compose UI and Android manifest
-- `service/` - Linux overlay service
-- `data/` - Local preference storage
+- app/ - Compose UI and Android manifest
+- service/ - Linux overlay service
+- data/ - Local preference storage
 
-## Permissions Required
+Permissions Required
 
 - Display over other apps - for overlay elements
 - Accessibility service - for detecting scroll gestures (local only)
 
-## Privacy
+Privacy
 
-```
-● No network access
-● Local processing only
-● No analytics
-● No telemetry
-```
+ * No network access
+ * Local processing only
+ * No analytics
+ * No telemetry
 
-## License
+License
 
 MIT License
 
-### Terms
+This software comes without any warranty. Use at your own discretion.
+The license allows personal and commercial use without restriction
+provided this notice and the license text remain intact.
 
-This software comes without any warranty. Use at your own discretion. The license allows personal and commercial use without restriction provided this notice and the license text remain intact.
+___________
