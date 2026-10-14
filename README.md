@@ -1,8 +1,14 @@
-___________
-< DUSKROLL >
------------
+DUSKROLL
+═══════════════════════════════════════════════════════
 
-A minimalist Android tool for tracking screen time on shortform video applications.
+  ___         _                 ___           _
+ / __|_ _  __| |_  _____ _ _  |   \ ___ _ _| |_
+ \__ \ ' \(_-< ' \/ _ \ '_|  | |) / -_) ' \  _|
+ |___/_||_/__/_||_\___/_|     |___/\___|_||_\__|
+
+
+A minimalist Android tool for tracking screen time on shortform
+video applications (TikTok, Instagram Reels, YouTube Shorts).
 
  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
  │  simple tracking for shortform scrolling habits              │
@@ -52,8 +58,11 @@ License
 
 MIT License
 
-This software comes without any warranty. Use at your own discretion.
-The license allows personal and commercial use without restriction
-provided this notice and the license text remain intact.
+Permission is hereby granted to use, copy, modify, merge, distribute,
+and sublicense this software freely.
 
-___________
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED.
+
+
+═══════════════════════════════════════════════════════
