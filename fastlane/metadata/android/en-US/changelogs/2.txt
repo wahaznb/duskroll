@@ -1,0 +1,1 @@
+v0.2.0: Doomscroller rebrand. CRT/dither theme, Doom fire, Matrix warning with custom text, reel counting, mod-client first-run scan, live counter chip. Fixes overlay lifecycle crash.

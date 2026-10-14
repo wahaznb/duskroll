@@ -1,0 +1,1 @@
+v0.3.0: Monochrome redesign (IBM Plex Mono only), fire rises inside the reel post-limit, dither close ritual, per-app limits, exact index reel counting, typing filter, persistent draggable chip, permission status card, About block.

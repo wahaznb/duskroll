@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- abyss -->
+    <path
+        android:fillColor="#111118"
+        android:pathData="M0,0h108v108h-108z" />
+    <!-- doom fire: back tongues -->
+    <path
+        android:fillColor="#7A1500"
+        android:pathData="M8,108 L20,72 L30,90 L40,64 L50,86 L60,66 L70,88 L80,70 L90,90 L100,76 L100,108 Z" />
+    <!-- fire mid -->
+    <path
+        android:fillColor="#FF2A1A"
+        android:pathData="M22,108 L32,82 L40,94 L50,76 L60,92 L70,80 L78,94 L86,84 L86,108 Z" />
+    <!-- fire core -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M40,108 L46,90 L52,98 L58,88 L64,96 L68,90 L68,108 Z" />
+    <!-- slayer brow plate -->
+    <path
+        android:fillColor="#2E2E3A"
+        android:pathData="M28,26 L80,26 L72,46 L36,46 Z" />
+    <!-- cheek plates -->
+    <path
+        android:fillColor="#23232E"
+        android:pathData="M30,50 L44,50 L42,68 L28,68 Z" />
+    <path
+        android:fillColor="#23232E"
+        android:pathData="M78,50 L64,50 L66,68 L80,68 Z" />
+    <!-- visor slit: burning -->
+    <path
+        android:fillColor="#FF2A1A"
+        android:pathData="M32,52 L76,52 L72,62 L36,62 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,54 L68,54 L66,60 L42,60 Z" />
+</vector>

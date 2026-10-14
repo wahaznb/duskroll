@@ -1,0 +1,4 @@
+Doomscroller — break the doomscroll loop.
+
+Detects continuous scrolling and shows a full-screen break reminder after
+your chosen time (default 10 minutes). Free, offline, no trackers.

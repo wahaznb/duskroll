@@ -1,0 +1,35 @@
+Categories:
+  - Health
+License: GPL-3.0-or-later
+AuthorName: Doomscroller contributors
+WebSite: https://example.com/scrollstop
+SourceCode: https://github.com/YOU/doomscroller
+IssueTracker: https://github.com/YOU/doomscroller/issues
+
+AutoName: Doomscroller
+Summary: Break reminder after continuous scrolling
+Description: |-
+  Doomscroller watches for scroll gestures and shows a full-screen break
+  reminder after continuous scrolling (default 10 minutes).
+
+  * 100% offline, no trackers, no internet permission
+  * AccessibilityService sees only THAT a scroll happened, never content
+  * Configurable threshold, idle timeout, and snooze
+  * GPL-3.0-or-later
+
+RepoType: git
+Repo: https://github.com/YOU/doomscroller.git
+
+Builds:
+  - versionName: 0.3.0
+    versionCode: 3
+    commit: v0.3.0
+    subdir: .
+    gradle:
+      - yes
+    prebuild: echo "no prebuild needed"
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: 0.3.0
+CurrentVersionCode: 3
