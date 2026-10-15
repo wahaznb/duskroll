@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.Doomscroller" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.Duskroll" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@android:color/white</item>
     </style>
 </resources>

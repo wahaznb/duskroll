@@ -17,18 +17,18 @@
     </queries>
 
     <application
-        android:name=".DoomscrollerApp"
+        android:name=".DuskrollApp"
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Doomscroller"
+        android:theme="@style/Theme.Duskroll"
         tools:targetApi="34">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Doomscroller">
+            android:theme="@style/Theme.Duskroll">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -61,7 +61,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Doomscroller break reminder overlay" />
+                android:value="duskroll break reminder overlay" />
         </service>
 
     </application>

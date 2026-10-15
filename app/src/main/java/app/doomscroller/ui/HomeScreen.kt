@@ -61,7 +61,7 @@ fun DoomApp(vm: HomeViewModel) {
             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                 DitherField(fx = settings.fxIntensity, dotColor = ink())
                 Column(Modifier.fillMaxSize()) {
-                    CascadeSwap(tab = tab, fx = settings.fxIntensity, modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.weight(1f)) {
                         if (tab == 0) HomeTab(vm) else SettingsTab(vm)
                     }
                     TabBar(tab = tab, onTab = { tab = it })
@@ -154,7 +154,7 @@ private fun HomeTab(vm: HomeViewModel) {
         )
 
         // live session readout — decodes like a WD2 profiler
-        ScrambleText(
+        Text(
             text = "${sReels}R",
             style = TextStyle(fontFamily = AppFont, color = fg, fontSize = 30.sp),
             modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -162,8 +162,7 @@ private fun HomeTab(vm: HomeViewModel) {
         LinearProgressIndicator(
             progress = { prog },
             modifier = Modifier
-                .fillMaxWidth().height(10.dp)
-                .shake(if (prog >= 0.9f) 0.5f else 0f),
+                .fillMaxWidth().height(10.dp),
             color = ink(),
             trackColor = fg.copy(alpha = 0.15f),
         )
@@ -174,18 +173,17 @@ private fun HomeTab(vm: HomeViewModel) {
         AnalyticsBlock(vm)
 
 
-        // COUNT vs SLAY mode switch
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SlayerButton(
                 onClick = { vm.setEnforce(false) },
                 modifier = Modifier.weight(1f),
-                red = !settings.enforceMode,
+                filled = !settings.enforceMode,
                 label = "COUNT",
             )
             SlayerButton(
                 onClick = { vm.setEnforce(true) },
                 modifier = Modifier.weight(1f),
-                red = settings.enforceMode,
+                filled = settings.enforceMode,
                 label = "STOP",
             )
         }
@@ -202,7 +200,7 @@ private fun HomeTab(vm: HomeViewModel) {
 private fun DoomTitle() {
     val fg = MaterialTheme.colorScheme.onBackground
     Text(
-        text = "doomscroller",
+        text = "duskroll",
         fontFamily = AppFont,
         fontWeight = FontWeight.Bold,
         color = fg,
@@ -480,7 +478,7 @@ private fun SetupCard(vm: HomeViewModel) {
                     val on = h.packageName in selected
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().staggerIn(idx),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Checkbox(
                             checked = on,
@@ -504,13 +502,13 @@ private fun SetupCard(vm: HomeViewModel) {
             SlayerButton(
                 onClick = { vm.finishSetup(selected) },
                 modifier = Modifier.weight(1f),
-                red = true,
+                filled = true,
                 label = "WATCH (${selected.size})",
             )
             SlayerButton(
                 onClick = { vm.finishSetup(emptySet()) },
                 modifier = Modifier.weight(1f),
-                red = false,
+                filled = false,
                 label = "WATCH ALL",
             )
         }
@@ -533,7 +531,7 @@ private fun SettingsTab(vm: HomeViewModel) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        JoJoTitle("SETTINGS")
+        DoomTitle("SETTINGS")
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("ENABLED", fontFamily = AppFont, color = fg, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Switch(checked = settings.enabled, onCheckedChange = vm::setEnabled)
@@ -558,10 +556,10 @@ private fun SettingsTab(vm: HomeViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("OFF", "LOW", "FULL").forEachIndexed { i, name ->
                 SlayerButton(
-                    onClick = { vm.setFx(i) },
-                    red = settings.fxIntensity == i,
-                    label = name,
-                )
+                onClick = { vm.setFx(i) },
+                filled = settings.fxIntensity == i,
+                label = name,
+            )
             }
         }
         SlayerButton(
@@ -569,7 +567,7 @@ private fun SettingsTab(vm: HomeViewModel) {
                 app.doomscroller.overlay.BreakActivity.start(context)
             },
             modifier = Modifier.fillMaxWidth(),
-            red = false,
+            filled = false,
             label = "PREVIEW CLOSE",
         )
 
@@ -584,13 +582,13 @@ private fun SettingsTab(vm: HomeViewModel) {
                 label = labelOf(pkg),
                 fg = fg,
                 globalThresholdMin = settings.thresholdMinutes,
-                modifier = Modifier.staggerIn(idx),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         SlayerButton(
             onClick = { showPicker = !showPicker },
             modifier = Modifier.fillMaxWidth(),
-            red = false,
+            filled = false,
             label = if (showPicker) "CLOSE ARSENAL" else "ADD TARGET",
         )
         if (showPicker) {
@@ -639,7 +637,7 @@ private fun AboutBlock() {
     ) {
         Text("ABOUT", fontFamily = AppFont, color = ink(), fontSize = 14.sp, fontWeight = FontWeight.Bold)
         Text(
-            "DOOMSCROLLER v${info.first} (${info.second})",
+            "duskroll v${info.first} (${info.second})",
             fontFamily = AppFont,
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 13.sp,
@@ -729,7 +727,7 @@ private fun PerAppRow(
                             it.thresholdMin != null || it.enforce != null
                         })
                     },
-                    red = cfg?.enforce != false,
+                    filled = cfg?.enforce != false,
                     label = "MODE: " + when (cfg?.enforce) {
                         true -> "STOP"
                         false -> "COUNT"
@@ -738,7 +736,7 @@ private fun PerAppRow(
                 )
                 SlayerButton(
                     onClick = { vm.setPerApp(pkg, null) },
-                    red = false,
+                    filled = false,
                     label = "RESET",
                 )
             }

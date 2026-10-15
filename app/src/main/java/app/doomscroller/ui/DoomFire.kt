@@ -13,26 +13,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
-/**
- * Genuine DOOM fire, upside down: heat buffer, white-hot source row
- * at the top, each cell cools a random 0..2 and drifts sideways as
- * it falls.
- *
- * Pixels are perfect unfiltered squares via nearest-neighbor scaling.
- *
- * @param cellPx device px per sim cell. Lower = sharper but costlier
- * (~1.4x going 12 to 10).
- */
+// ---------- minimal Doom fire ----------
 @Composable
 fun DoomFire(
     modifier: Modifier = Modifier,
@@ -47,17 +40,12 @@ fun DoomFire(
         val density = LocalDensity.current
         val wPx = with(density) { maxWidth.toPx() }.toInt().coerceAtLeast(1)
         val hPx = with(density) { maxHeight.toPx() }.toInt().coerceAtLeast(1)
-        // Original sizing: one sim cell per cellPx device pixels on each
-        // axis independently, so every cell stays a perfect square and
-        // the grid matches the canvas aspect — no stretching.
         val gw = (wPx / cellPx).coerceIn(8, 320)
         val gh = (hPx / cellPx).coerceIn(8, 320)
         var frame by remember { mutableStateOf(0) }
         val fire = remember(gw, gh, colorLow, colorMid, colorHigh) {
             DoomFireState(gw, gh, colorLow, colorMid, colorHigh)
         }
-        // Intensity is read via snapshot state so every-second progress
-        // updates don't cancel and restart the 60ms spread loop.
         val latestIntensity by rememberUpdatedState(intensity)
 
         if (fx == 2) {
@@ -72,7 +60,7 @@ fun DoomFire(
             }
         } else {
             LaunchedEffect(gw, gh) {
-                repeat(40) { fire.spread(intensity) } // settle one static frame
+                repeat(40) { fire.spread(intensity) }
                 frame = 1
             }
         }
@@ -80,18 +68,15 @@ fun DoomFire(
         Canvas(Modifier.fillMaxSize()) {
             frame
             val bmp = fire.snapshot()
-            // Aspect-preserving letterbox: scale so one sim cell maps to
-            // identical width/height device pixels. Never stretch — a
-            // wide canvas gets side margins, never wide pixels.
-            val scale = minOf(size.width / gw, size.height / gh)
+            val scale = minOf(size.width / gw, size.height / gh).coerceAtLeast(1f)
             val dw = (gw * scale).toInt().coerceAtLeast(1)
             val dh = (gh * scale).toInt().coerceAtLeast(1)
             val ox = ((size.width - dw) / 2).toInt()
             val oy = ((size.height - dh) / 2).toInt()
             drawImage(
                 image = bmp,
-                dstOffset = androidx.compose.ui.unit.IntOffset(ox, oy),
-                dstSize = androidx.compose.ui.unit.IntSize(dw, dh),
+                dstOffset = IntOffset(ox, oy),
+                dstSize = IntSize(dw, dh),
                 filterQuality = FilterQuality.None,
             )
         }
@@ -113,7 +98,6 @@ private class DoomFireState(val w: Int, val h: Int, low: Int, mid: Int, high: In
     }
 
     fun spread(intensity: Float = 1f) {
-        // Descending order — fire flows downward
         for (y in h - 1 downTo 1) {
             for (x in 0 until w) {
                 val src = (y - 1) * w + x
@@ -123,7 +107,6 @@ private class DoomFireState(val w: Int, val h: Int, low: Int, mid: Int, high: In
                 heat[dst] = (heat[src] - decay).coerceAtLeast(0)
             }
         }
-        // Re-stoke top row with flicker
         val stock = (PALETTE_LAST * intensity).toInt().coerceIn(8, PALETTE_LAST)
         for (x in 0 until w) {
             heat[x] = stock - random.nextInt(4).coerceAtMost(stock)
@@ -146,18 +129,13 @@ private class DoomFireState(val w: Int, val h: Int, low: Int, mid: Int, high: In
         bitmap?.recycle()
         bitmap = null
     }
-
-    companion object {
-        const val PALETTE_LAST = 36
-    }
 }
 
 const val DEFAULT_FIRE = 0xFFFF3B2C.toInt() // gradient MID default
 const val DEFAULT_FIRE_LOW = 0xFF7A0D00.toInt() // gradient LOW default (deep red)
 const val DEFAULT_FIRE_HIGH = 0xFFFFE9A8.toInt() // gradient HIGH default (pale yellow)
 
-/**
- * Classic DOOM-style gradient from three user stops: heat 0 is
+/** Classic DOOM-style gradient from three user stops: heat 0 is
  * transparent, heat 1..18 ramps LOW to MID, heat 19..36 ramps MID
  * to HIGH — dark base, saturated body, hot tips.
  */
@@ -169,7 +147,7 @@ private fun buildPalette(low: Int, mid: Int, high: Int): IntArray {
     val result = IntArray(n)
     for (i in 0 until n) {
         if (i == 0) {
-            result[i] = 0x00000000.toInt()  // transparent — flames emerge from nothing
+            result[i] = 0x00000000.toInt()
         } else if (i <= 18) {
             val t = (i - 1) / 17f
             result[i] = lerpColor(lo, mm, t)
@@ -188,3 +166,4 @@ private fun lerpColor(a: IntArray, b: IntArray, t: Float): Int {
     return (0xFF shl 24) or (r shl 16) or (g shl 8) or bl
 }
 
+private const val PALETTE_LAST = 37

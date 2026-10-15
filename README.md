@@ -20,7 +20,7 @@ Functionality
 
 Technical Details
 
-- rust + kotlin/compose
+- Kotlin + Compose
   - overlay service
   - scroll detection
   - local preferences
@@ -28,7 +28,7 @@ Technical Details
 Files:
 
 - app/ - Compose UI and Android manifest
-- service/ - Linux overlay service
+- service/ - Scroll detection accessibility service
 - data/ - Local preference storage
 
 Permissions Required

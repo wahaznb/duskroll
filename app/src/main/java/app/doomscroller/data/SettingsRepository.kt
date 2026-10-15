@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
-private val Context.dataStore by preferencesDataStore(name = "doomscroller_settings")
+private val Context.dataStore by preferencesDataStore(name = "duskroll_settings")
 
 data class DoomSettings(
     val enabled: Boolean = true,

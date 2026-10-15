@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">Doomscroller</string>
+    <string name="app_name">duskroll</string>
+
     <string name="accessibility_service_description">Detects continuous scrolling (scroll gestures only) to remind you to take a break. No screen content is read.</string>
 </resources>

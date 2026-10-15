@@ -46,7 +46,7 @@ class LockoutOverlayManager(private val context: Context) {
             return
         }
         val mins = (remainingMs.coerceAtLeast(0L)) / 60_000L
-        val secs = ((remainingMs.coerceAtLeast(0L)) % 60_000L) / 1000L
+        val secs = (remainingMs.coerceAtLeast(0L) % 60_000L) / 1000L
         line1 = "LOCKED OUT"
         line2 = "%d:%02d LEFT".format(mins, secs)
         ensureWindow()
