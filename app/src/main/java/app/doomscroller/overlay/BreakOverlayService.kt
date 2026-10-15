@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.foundation.Canvas
@@ -58,6 +59,13 @@ class BreakOverlayService : Service() {
 
     private fun showOverlay() {
         if (overlayView != null) return
+        // No overlay permission → fall back to the plain activity ritual
+        // so the close still happens instead of silently doing nothing.
+        if (!Settings.canDrawOverlays(this)) {
+            BreakActivity.start(this)
+            stopSelf()
+            return
+        }
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val view = ComposeView(this).apply {
             val owner = OverlayLifecycleOwner()
@@ -86,8 +94,14 @@ class BreakOverlayService : Service() {
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
         ).apply { gravity = Gravity.CENTER }
-        runCatching { wm.addView(view, params) }.onSuccess { overlayView = view }
-            .onFailure { stopSelf() }
+        runCatching { wm.addView(view, params) }
+            .onSuccess { overlayView = view }
+            .onFailure {
+                // Overlay rejected (e.g. permission revoked mid-flight):
+                // still run the ritual as an activity so the app closes.
+                BreakActivity.start(this)
+                stopSelf()
+            }
     }
 
     private fun removeOverlay() {
@@ -146,9 +160,6 @@ private val BAYER_8 = arrayOf(
     intArrayOf(15, 47, 7, 39, 13, 45, 5, 37),
     intArrayOf(63, 31, 55, 23, 61, 29, 53, 21),
 )
-
-private fun bayer8(x: Int, y: Int): Float =
-    BAYER_8[y and 7][x and 7] / 64f
 
 /**
  * Close ritual: an ordered-dither density sweep. A full-screen Bayer-8

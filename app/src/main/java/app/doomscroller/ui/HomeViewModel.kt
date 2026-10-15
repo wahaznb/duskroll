@@ -69,6 +69,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     fun setFx(v: Int) = viewModelScope.launch { repo.setFxIntensity(v) }
     fun setChip(v: Boolean) = viewModelScope.launch { repo.setChipEnabled(v) }
     fun setFireColor(hex: String) = viewModelScope.launch { repo.setFireColor(hex) }
+    fun setFireLow(hex: String) = viewModelScope.launch { repo.setFireLow(hex) }
+    fun setFireHigh(hex: String) = viewModelScope.launch { repo.setFireHigh(hex) }
     fun setEnforce(v: Boolean) = viewModelScope.launch { repo.setEnforceMode(v) }
     fun addTarget(pkg: String) = viewModelScope.launch { repo.addTarget(pkg) }
     fun removeTarget(pkg: String) = viewModelScope.launch { repo.removeTarget(pkg) }

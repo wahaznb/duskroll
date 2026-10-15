@@ -21,7 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
@@ -42,16 +41,20 @@ class FireWallManager(private val context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var progress by mutableFloatStateOf(0f)
     private var fxLevel by mutableStateOf(2)
-    private var fireColor by mutableStateOf(app.doomscroller.ui.DEFAULT_FIRE)
+    private var fireLow by mutableStateOf(app.doomscroller.ui.DEFAULT_FIRE_LOW)
+    private var fireMid by mutableStateOf(app.doomscroller.ui.DEFAULT_FIRE)
+    private var fireHigh by mutableStateOf(app.doomscroller.ui.DEFAULT_FIRE_HIGH)
 
-    fun show(prog: Float, fx: Int, fireColor: Int) {
+    fun show(prog: Float, fx: Int, low: Int, mid: Int, high: Int) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            mainHandler.post { show(prog, fx, fireColor) }
+            mainHandler.post { show(prog, fx, low, mid, high) }
             return
         }
         progress = prog.coerceIn(0f, 1f)
         fxLevel = fx
-        this.fireColor = fireColor
+        this.fireLow = low
+        this.fireMid = mid
+        this.fireHigh = high
         if (!Settings.canDrawOverlays(context)) return
         if (view != null) return
 
@@ -87,7 +90,9 @@ class FireWallManager(private val context: Context) {
                 FireWall(
                     progress = progress,
                     fx = fxLevel,
-                    fireColor = fireColor,
+                    low = fireLow,
+                    mid = fireMid,
+                    high = fireHigh,
                 )
             }
         }
@@ -137,7 +142,7 @@ class FireWallManager(private val context: Context) {
 }
 
 @Composable
-private fun FireWall(progress: Float, fx: Int, fireColor: Int) {
+private fun FireWall(progress: Float, fx: Int, low: Int, mid: Int, high: Int) {
     // Fire hangs from the window's top edge and burns downward in
     // proportion to session progress.
     // No fade animation — fire only increases, never fades in/out.
@@ -153,7 +158,9 @@ private fun FireWall(progress: Float, fx: Int, fireColor: Int) {
                         modifier = Modifier.fillMaxSize(),
                         fx = fx,
                         intensity = 0.5f + fill * 0.9f,
-                        baseColor = fireColor,
+                        colorLow = low,
+                        colorMid = mid,
+                        colorHigh = high,
                     )
                 }
                 Spacer(Modifier.fillMaxWidth().weight(1f - fill, fill = false))

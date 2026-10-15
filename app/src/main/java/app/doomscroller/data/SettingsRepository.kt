@@ -29,8 +29,12 @@ data class DoomSettings(
     val chipEnabled: Boolean = true,
     /** true = break overlay past limit; false = count silently. */
     val enforceMode: Boolean = true,
-    /** Fire color hex — minimal 3-color system for doom aesthetic: black, white, and user-picked accent. */
+    /** Fire gradient MID stop hex — user-picked. */
     val fireColor: String = DEFAULT_FIRE_HEX,
+    /** Fire gradient LOW stop hex (cool/dark end) — user-picked. */
+    val fireLow: String = DEFAULT_FIRE_LOW_HEX,
+    /** Fire gradient HIGH stop hex (hot end) — user-picked. */
+    val fireHigh: String = DEFAULT_FIRE_HIGH_HEX,
     val reelsTotal: Long = 0L,
     val msTotal: Long = 0L,
     val sessionsToday: Long = 0L,
@@ -44,18 +48,27 @@ data class DoomSettings(
     val lockoutDurationMs: Long = 60 * 60 * 1000L,
 )
 
-const val DEFAULT_FIRE_HEX = "#FF3B2C"  // Bright, dramatic red — the "user-picked" accent
+const val DEFAULT_FIRE_HEX = "#FF3B2C"  // gradient MID stop default
+const val DEFAULT_FIRE_LOW_HEX = "#7A0D00"  // gradient LOW stop default (deep red)
+const val DEFAULT_FIRE_HIGH_HEX = "#FFE9A8"  // gradient HIGH stop default (pale yellow)
 
-/** Minimal 3-color doom palette: black background, white text, bright accent for fire. */
-val DOOM_COLORS = listOf(
-    "#000000",  // pure black — doom darkness
-    "#FFFFFF",  // pure white — doom contrast
-    DEFAULT_FIRE_HEX,  // user-picked accent — #FF3B2C, bright red
+/** Curated swatches offered for each gradient stop. */
+val FIRE_SWATCHES = listOf(
+    "#7A0D00", // ember dark
+    "#FF3B2C", // signal red
+    "#FF6A00", // ember orange
+    "#FFB300", // amber
+    "#FFE9A8", // bone yellow
+    "#FFFFFF", // white hot
+    "#000000", // blackout
 )
 
-fun sanitizeFireHex(hex: String?): String {
-    val upper = hex?.uppercase() ?: return DEFAULT_FIRE_HEX
-    return if (DOOM_COLORS.contains(upper)) upper else DEFAULT_FIRE_HEX
+fun sanitizeFireHex(hex: String?, fallback: String = DEFAULT_FIRE_HEX): String {
+    val upper = hex?.uppercase()?.trim() ?: return fallback
+    if (upper.length == 7 && upper[0] == '#' && upper.drop(1).all { it in '0'..'9' || it in 'A'..'F' }) {
+        return upper
+    }
+    return fallback
 }
 
 class SettingsRepository(private val context: Context) {
@@ -73,6 +86,8 @@ class SettingsRepository(private val context: Context) {
         val ENFORCE = booleanPreferencesKey("enforce_mode")
         val DAY = stringPreferencesKey("counter_day")
         val FIRE = stringPreferencesKey("fire_color")
+        val FIRE_LOW = stringPreferencesKey("fire_low")
+        val FIRE_HIGH = stringPreferencesKey("fire_high")
         val PERAPP = stringPreferencesKey("perapp_json")
         val REELS = longPreferencesKey("reels_total")
         val MS = longPreferencesKey("ms_total")
@@ -102,6 +117,8 @@ class SettingsRepository(private val context: Context) {
             chipEnabled = prefs[Keys.CHIP] ?: true,
             enforceMode = prefs[Keys.ENFORCE] ?: true,
             fireColor = sanitizeFireHex(prefs[Keys.FIRE]),
+            fireLow = sanitizeFireHex(prefs[Keys.FIRE_LOW], DEFAULT_FIRE_LOW_HEX),
+            fireHigh = sanitizeFireHex(prefs[Keys.FIRE_HIGH], DEFAULT_FIRE_HIGH_HEX),
             reelsTotal = prefs[Keys.REELS] ?: 0L,
             msTotal = prefs[Keys.MS] ?: 0L,
             sessionsToday = prefs[Keys.SESSIONS] ?: 0L,
@@ -125,6 +142,12 @@ class SettingsRepository(private val context: Context) {
     }
     suspend fun setFireColor(hex: String) = edit {
         it[Keys.FIRE] = sanitizeFireHex(hex)
+    }
+    suspend fun setFireLow(hex: String) = edit {
+        it[Keys.FIRE_LOW] = sanitizeFireHex(hex)
+    }
+    suspend fun setFireHigh(hex: String) = edit {
+        it[Keys.FIRE_HIGH] = sanitizeFireHex(hex)
     }
     /** Set lockout until timestamp (elapsedRealtime). 0 = no lockout. */
     suspend fun setLockoutUntil(untilMs: Long) = edit {

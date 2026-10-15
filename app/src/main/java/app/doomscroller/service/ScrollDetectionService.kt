@@ -8,9 +8,12 @@ import app.doomscroller.data.SettingsRepository
 import app.doomscroller.data.sanitizeFireHex
 import app.doomscroller.domain.ReelCounter
 import app.doomscroller.domain.ScrollSessionTracker
+import app.doomscroller.overlay.BreakActivity
 import app.doomscroller.overlay.BreakOverlayService
 import app.doomscroller.overlay.ChipOverlayManager
+import app.doomscroller.overlay.CloseRitualOverlay
 import app.doomscroller.overlay.FireWallManager
+import app.doomscroller.overlay.LockoutOverlayManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -61,6 +64,9 @@ class ScrollDetectionService : AccessibilityService() {
     private lateinit var settings: SettingsRepository
     private lateinit var chip: ChipOverlayManager
     private lateinit var firewall: FireWallManager
+    private lateinit var closeRitual: CloseRitualOverlay
+    private lateinit var lockoutBanner: LockoutOverlayManager
+    @Volatile private var lockoutUntilMs: Long = 0L
     @Volatile private var fxLevel = 2
 
     @Volatile private var enabled = true
@@ -70,12 +76,14 @@ class ScrollDetectionService : AccessibilityService() {
     @Volatile private var globalThresholdMin = 10
     @Volatile private var closeStreak = 0
     @Volatile private var chipEnabled = true
-    @Volatile private var fireArgb = app.doomscroller.ui.DEFAULT_FIRE
+    @Volatile private var fireLowArgb = app.doomscroller.ui.DEFAULT_FIRE_LOW
+    @Volatile private var fireMidArgb = app.doomscroller.ui.DEFAULT_FIRE
+    @Volatile private var fireHighArgb = app.doomscroller.ui.DEFAULT_FIRE_HIGH
     @Volatile private var lockoutDurationMs: Long = 60 * 60 * 1000L
     private data class SavedSession(
-        var reels: Long,
-        var bankedMs: Long,
-        var fired: Boolean,
+        val reels: Long,
+        val bankedMs: Long,
+        val fired: Boolean,
     )
     private val savedSessions = mutableMapOf<String, SavedSession>()
     @Volatile private var foregroundPkg: String? = null
@@ -92,6 +100,8 @@ class ScrollDetectionService : AccessibilityService() {
     private var rampDoneFired = false
     /** 10-second wait after fire reaches 30% before closing. */
     private var closeWaitJob: Job? = null
+    /** Guards triggerBreak: one ritual per episode, never per scroll event. */
+    @Volatile private var breakShowing = false
     private var lastFromIdx = -1
 
     companion object {
@@ -105,6 +115,8 @@ class ScrollDetectionService : AccessibilityService() {
         settings = SettingsRepository(applicationContext)
         chip = ChipOverlayManager(applicationContext)
         firewall = FireWallManager(applicationContext)
+        closeRitual = CloseRitualOverlay(applicationContext)
+        lockoutBanner = LockoutOverlayManager(applicationContext)
         nonAppPkgs = buildNonAppPkgs()
         settingsJob = scope.launch {
             settings.settings.collect { s ->
@@ -115,12 +127,23 @@ class ScrollDetectionService : AccessibilityService() {
                 globalThresholdMin = s.thresholdMinutes
                 closeStreak = s.closeStreak
                 fxLevel = s.fxIntensity
-                fireArgb = try {
+                fireMidArgb = try {
                     android.graphics.Color.parseColor(sanitizeFireHex(s.fireColor))
                 } catch (_: Exception) {
                     app.doomscroller.ui.DEFAULT_FIRE
                 }
+                fireLowArgb = try {
+                    android.graphics.Color.parseColor(sanitizeFireHex(s.fireLow))
+                } catch (_: Exception) {
+                    app.doomscroller.ui.DEFAULT_FIRE_LOW
+                }
+                fireHighArgb = try {
+                    android.graphics.Color.parseColor(sanitizeFireHex(s.fireHigh))
+                } catch (_: Exception) {
+                    app.doomscroller.ui.DEFAULT_FIRE_HIGH
+                }
                 lockoutDurationMs = s.lockoutDurationMs
+                lockoutUntilMs = s.lockoutUntil
                 if (!chipEnabled) chip.hide()
                 tracker.updateThreshold(s.thresholdMinutes * 60_000L)
             }
@@ -143,6 +166,19 @@ class ScrollDetectionService : AccessibilityService() {
                 }
                 tickCount += 1
                 if (tickCount % 10 == 0) flushPending()
+                // Lockout bookkeeping: refresh the banner countdown and
+                // clear it the moment the lockout expires.
+                val lockedLeftTick = lockoutUntilMs - android.os.SystemClock.elapsedRealtime()
+                if (lockoutUntilMs > 0L && lockedLeftTick <= 0L) {
+                    lockoutUntilMs = 0L
+                    lockoutBanner.hide()
+                    scope.launch { runCatching { settings.clearLockout() } }
+                } else if (lockedLeftTick > 0L) {
+                    val fg = foregroundPkg
+                    if (fg != null && (targets.isEmpty() || fg in targets) && fg !in nonAppPkgs) {
+                        lockoutBanner.show(lockedLeftTick)
+                    }
+                }
             }
         }
     }
@@ -166,6 +202,19 @@ class ScrollDetectionService : AccessibilityService() {
         val monitored = targets.isEmpty() || pkg in targets
         if (!monitored) return
         if (pkg in ScrollSessionTracker.IGNORED_PACKAGES) return
+        // System UI, keyboards, our own UI: their stray scrolls must
+        // never end (and wipe) the watched app's session.
+        if (pkg in nonAppPkgs) return
+
+        // Locked out: warn where the user is, over the watched app.
+        // Any scroll during lockout closes the app again.
+        val lockedLeft = lockoutUntilMs - android.os.SystemClock.elapsedRealtime()
+        if (lockedLeft > 0L) {
+            lockoutBanner.show(lockedLeft)
+            val appEnforce = perApp[pkg]?.enforce ?: enforce
+            if (appEnforce) triggerBreak()
+            return
+        }
 
         // App switch ends the previous session (commit, idle chip);
         // the event below starts a fresh one — unless we stashed one.
@@ -244,6 +293,14 @@ class ScrollDetectionService : AccessibilityService() {
     private fun onForegroundChanged(pkg: String?, now: Long) {
         if (pkg == null || pkg in nonAppPkgs) return
         foregroundPkg = pkg
+        // Lockout banner belongs over the watched app, not duskroll.
+        val monitored = targets.isEmpty() || pkg in targets
+        val lockedLeft = lockoutUntilMs - android.os.SystemClock.elapsedRealtime()
+        if (monitored && lockedLeft > 0L) {
+            lockoutBanner.show(lockedLeft)
+        } else {
+            lockoutBanner.hide()
+        }
         val cur = tracker.sessionPackage() ?: return
         if (cur == pkg || tracker.isPaused()) return
         tracker.pause(now)
@@ -286,7 +343,7 @@ class ScrollDetectionService : AccessibilityService() {
         val fireProg = (over.toFloat() / fireDurationMs.coerceAtLeast(1L)).coerceIn(0f, 1f)
         // Fire burns only inside its own app.
         if (fireProg > 0f && foregroundPkg == tracker.sessionPackage()) {
-            firewall.show(fireProg, fxLevel, fireArgb)
+            firewall.show(fireProg, fxLevel, fireLowArgb, fireMidArgb, fireHighArgb)
         } else {
             firewall.hide()
         }
@@ -315,10 +372,21 @@ class ScrollDetectionService : AccessibilityService() {
     }
 
     private fun endSession() {
+        // Stash before wiping: a genuine app switch keeps its counts
+        // for when the user returns; stray switches no longer reset.
+        val now = SystemClock.uptimeMillis()
+        tracker.sessionPackage()?.let { cur ->
+            savedSessions[cur] = SavedSession(
+                sessionReels,
+                tracker.sessionDurationMs(now),
+                rampDoneFired,
+            )
+        }
         sessionReels = 0L
         lastActivePkg = null
         lastFromIdx = -1
         rampDoneFired = false
+        cancelCloseWait()
         tracker.reset()
         SessionStats.clear()
         chip.hide()
@@ -327,9 +395,29 @@ class ScrollDetectionService : AccessibilityService() {
     }
 
     private fun triggerBreak() {
+        // One break per episode: a fling is a burst of scroll events,
+        // and each must not re-count the streak or push the lockout out.
+        if (breakShowing) return
+        breakShowing = true
         chip.hide()
         firewall.hide()
-        BreakOverlayService.start(this)
+        lockoutBanner.hide()
+        // Overlay ritual drawn from this process: reliable on modern
+        // Android where FGS/activity starts from background are denied.
+        // GLOBAL_ACTION_HOME is the accessibility-sanctioned way to
+        // actually leave the scrolling app.
+        val shown = runCatching {
+            closeRitual.show(
+                onCloseApp = { performGlobalAction(GLOBAL_ACTION_HOME) },
+                onDone = { breakShowing = false },
+            )
+        }.getOrDefault(false)
+        if (!shown) {
+            // No overlay permission: service/activity fallbacks.
+            BreakOverlayService.start(this)
+            runCatching { BreakActivity.start(this) }
+            breakShowing = false
+        }
         scope.launch { runCatching { settings.incrementCloseStreak() } }
         scope.launch {
             val snoozeMin = try {
@@ -337,9 +425,15 @@ class ScrollDetectionService : AccessibilityService() {
             } catch (_: Exception) { 5 }
             tracker.snooze(SystemClock.uptimeMillis(), snoozeMin.coerceAtLeast(1) * 60_000L)
         }
-        // Set lockout timer so reopen shows guilt-trip screen
+        // Set lockout timer so reopen shows guilt-trip screen — but never
+        // extend an already-active lockout on repeat scrolls.
         scope.launch {
-            settings.setLockoutUntil(SystemClock.elapsedRealtime() + lockoutDurationMs)
+            runCatching {
+                val cur = settings.settings.first().lockoutUntil
+                if (cur <= SystemClock.elapsedRealtime()) {
+                    settings.setLockoutUntil(SystemClock.elapsedRealtime() + lockoutDurationMs)
+                }
+            }
         }
     }
 
@@ -352,6 +446,8 @@ class ScrollDetectionService : AccessibilityService() {
         scope.cancel()
         if (::chip.isInitialized) chip.destroy()
         if (::firewall.isInitialized) firewall.destroy()
+        if (::closeRitual.isInitialized) closeRitual.destroy()
+        if (::lockoutBanner.isInitialized) lockoutBanner.destroy()
         super.onDestroy()
     }
 }

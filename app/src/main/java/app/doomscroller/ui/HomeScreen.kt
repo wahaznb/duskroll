@@ -107,15 +107,28 @@ private fun TabBar(tab: Int, onTab: (Int) -> Unit) {
 
 @Composable
 private fun HomeTab(vm: HomeViewModel) {
-    val context = LocalContext.current
     val settings by vm.settings.collectAsState()
     val sReels by vm.sessionReels.collectAsState()
     val sMs by vm.sessionMs.collectAsState()
     val fg = MaterialTheme.colorScheme.onBackground
 
-    // Check for lockout — show timer if locked out
+    // Check for lockout — show timer if locked out. Ticks every second
+    // so the countdown moves and the screen clears itself on expiry.
+    // The ticker only runs while actually locked out.
     val lockoutUntil by vm.lockoutUntil.collectAsState()
-    val now = SystemClock.elapsedRealtime()
+    var now by remember { mutableStateOf(SystemClock.elapsedRealtime()) }
+    if (lockoutUntil > 0L) {
+        LaunchedEffect(lockoutUntil) {
+            while (true) {
+                now = SystemClock.elapsedRealtime()
+                if (lockoutUntil <= now) {
+                    vm.clearLockout()
+                    break
+                }
+                delay(1000L)
+            }
+        }
+    }
     val timeLeft = if (lockoutUntil > now) lockoutUntil - now else 0L
 
     if (lockoutUntil > now) {
@@ -207,9 +220,10 @@ private fun LockoutScreen(
     onDismiss: () -> Unit,
 ) {
     val fg = MaterialTheme.colorScheme.onBackground
-    // 5-second guilt trip then show timer
+    // 5-second guilt trip then show timer — one-shot, not keyed on the
+    // ticking countdown (otherwise it would restart every second).
     var warned by remember { mutableStateOf(false) }
-    LaunchedEffect(timeLeftMs) {
+    LaunchedEffect(Unit) {
         delay(5000L)
         warned = true
     }
@@ -314,6 +328,46 @@ private fun PermStatusCard() {
     }
 }
 
+/** One gradient stop picker: label + swatch row. */
+@Composable
+private fun FireStopRow(
+    label: String,
+    current: String,
+    fg: Color,
+    onPick: (String) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, fontFamily = AppFont, fontWeight = FontWeight.Bold, color = fg, fontSize = 12.sp, modifier = Modifier.width(36.dp))
+        for (hex in app.doomscroller.data.FIRE_SWATCHES) {
+            val selected = current.equals(hex, ignoreCase = true)
+            val swatch = runCatching {
+                androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex))
+            }.getOrDefault(fg)
+            Box(
+                Modifier.size(32.dp)
+                    .background(swatch)
+                    .border(
+                        width = if (selected) 3.dp else 1.dp,
+                        color = if (selected) fg else fg.copy(alpha = 0.3f),
+                    )
+                    .semantics {
+                        contentDescription = "$label stop $hex" + if (selected) ", selected" else ""
+                    }
+                    .clickable(
+                        role = androidx.compose.ui.semantics.Role.Button,
+                        onClickLabel = "Set $label to $hex",
+                        onClick = { onPick(hex) },
+                    ),
+            )
+        }
+    }
+    Spacer(Modifier.height(4.dp))
+}
+
 @Composable
 private fun PermRow(name: String, on: Boolean, onOpen: () -> Unit) {
     Row(
@@ -411,7 +465,7 @@ private fun SetupCard(vm: HomeViewModel) {
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("⚠ FIRST SCAN — PICK YOUR TARGETS", fontFamily = AppFont, color = ink(), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text("[!] FIRST SCAN — PICK YOUR TARGETS", fontFamily = AppFont, color = ink(), fontSize = 14.sp, fontWeight = FontWeight.Bold)
         Text(
             "Suspects found on your phone (mods flagged by sideload + twin check). Tick to watch, or watch everything.",
             fontFamily = AppFont, color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp,
@@ -494,33 +548,12 @@ private fun SettingsTab(vm: HomeViewModel) {
             Text("LIVE CHIP", fontFamily = AppFont, color = fg, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Switch(checked = settings.chipEnabled, onCheckedChange = vm::setChip)
         }
-        Text("FIRE COLOR", fontFamily = AppFont, color = fg, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        Text("SELECT DOOM PALETTE (3 colors: black, white, accent)", fontFamily = AppFont, color = fg.copy(alpha = 0.6f), fontSize = 10.sp)
+        Text("FIRE GRADIENT", fontFamily = AppFont, color = fg, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text("LOW = cool base, MID = body, HIGH = hot tips", fontFamily = AppFont, color = fg.copy(alpha = 0.6f), fontSize = 10.sp)
         Spacer(Modifier.height(4.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            for (hex in app.doomscroller.data.DOOM_COLORS) {
-                val selected = settings.fireColor.equals(hex, ignoreCase = true)
-                Box(
-                    Modifier.size(48.dp)
-                        .background(
-                            androidx.compose.ui.graphics.Color(
-                                android.graphics.Color.parseColor(hex)
-                            )
-                        )
-                        .border(
-                            width = if (selected) 4.dp else 2.dp,
-                            color = if (selected) fg else fg.copy(alpha = 0.3f),
-                        )
-                        .clickable(
-                            role = androidx.compose.ui.semantics.Role.Button,
-                            onClick = { vm.setFireColor(hex) },
-                        ),
-                )
-            }
-        }
+        FireStopRow(label = "LOW", current = settings.fireLow, fg = fg, onPick = vm::setFireLow)
+        FireStopRow(label = "MID", current = settings.fireColor, fg = fg, onPick = vm::setFireColor)
+        FireStopRow(label = "HIGH", current = settings.fireHigh, fg = fg, onPick = vm::setFireHigh)
         Text("FX INTENSITY", fontFamily = AppFont, color = fg, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("OFF", "LOW", "FULL").forEachIndexed { i, name ->
