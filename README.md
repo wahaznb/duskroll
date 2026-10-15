@@ -1,13 +1,10 @@
 D U S K R O L L
-═══════════════════════════════════════════════════════
+---------------------------------------------------------------
 
+A minimalist Android tool for tracking screen time on shortform
+video applications (TikTok, Instagram Reels, YouTube Shorts).
 
-A minimalist Android tool for tracking screen time on shortform video applications.
-
- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
- │  simple tracking for shortform scrolling habits              │
- └─────────────────────────────────────────────────────────────┘
-
+---------------------------------------------------------------
 Purpose
 
 Modern social media platforms are designed to maximize engagement.
@@ -23,12 +20,10 @@ Functionality
 
 Technical Details
 
- +-----------------------------+
- |  rust + kotlin/compose      |
- |  + overlay service          |
- |  + scroll detection         |
- |  + local preferences        |
- +-----------------------------+
+- rust + kotlin/compose
+  - overlay service
+  - scroll detection
+  - local preferences
 
 Files:
 
@@ -43,10 +38,10 @@ Permissions Required
 
 Privacy
 
- * No network access
- * Local processing only
- * No analytics
- * No telemetry
+- No network access
+- Local processing only
+- No analytics
+- No telemetry
 
 License
 
@@ -58,5 +53,4 @@ and sublicense this software freely.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED.
 
-
-═══════════════════════════════════════════════════════
+---------------------------------------------------------------
