@@ -150,7 +150,7 @@ private fun FireWall(progress: Float, fx: Int, fireColor: Int) {
             Column(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxWidth().weight(fill, fill = true)) {
                     DoomFire(
-                        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = 0.6f },
+                        modifier = Modifier.fillMaxSize(),
                         fx = fx,
                         intensity = 0.5f + fill * 0.9f,
                         baseColor = fireColor,
